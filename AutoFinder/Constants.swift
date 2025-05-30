@@ -2,7 +2,12 @@ import Foundation
 
 // MARK: - API 상수
 struct APIConstants {
-    static let baseURL = "http://localhost:8080"
+    // 또는 개발/배포 환경을 구분하여 설정
+    #if DEBUG
+    static let baseURL = "http://192.168.219.100:8080"  // 개발용 (실제 IP)
+    #else
+    static let baseURL = "https://your-production-server.com"  // 배포용
+    #endif
     
     struct Endpoints {
         // 인증

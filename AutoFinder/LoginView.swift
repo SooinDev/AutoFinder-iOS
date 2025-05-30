@@ -13,31 +13,31 @@ struct LoginView: View {
             // 배경 그라데이션
             LinearGradient(
                 gradient: Gradient(colors: [
-                    Color(UIConstants.Colors.primaryBlue).opacity(0.1),
-                    Color(UIConstants.Colors.backgroundColor)
+                    Color.primaryBlue.opacity(0.1),
+                    Color.backgroundColor
                 ]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
             
-            VStack(spacing: UIConstants.Spacing.xl) {
+            VStack(spacing: 32) {
                 Spacer()
                 
                 // 앱 로고 및 타이틀
-                VStack(spacing: UIConstants.Spacing.lg) {
+                VStack(spacing: 24) {
                     Image(systemName: "car.fill")
                         .font(.system(size: 80))
-                        .foregroundColor(Color(UIConstants.Colors.primaryBlue))
+                        .foregroundColor(.primaryBlue)
                     
                     Text(AppConstants.appName)
                         .font(.largeTitle)
                         .fontWeight(.bold)
-                        .foregroundColor(Color(UIConstants.Colors.textPrimary))
+                        .foregroundColor(.textPrimary)
                     
                     Text("당신에게 맞는 완벽한 차량을 찾아보세요")
                         .font(.subheadline)
-                        .foregroundColor(Color(UIConstants.Colors.textSecondary))
+                        .foregroundColor(.textSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
@@ -62,14 +62,14 @@ struct LoginView: View {
                 Spacer()
                 
                 // 하단 정보
-                VStack(spacing: UIConstants.Spacing.sm) {
+                VStack(spacing: 8) {
                     Text("AutoFinder v\(AppConstants.version)")
                         .font(.caption)
-                        .foregroundColor(Color(UIConstants.Colors.textSecondary))
+                        .foregroundColor(.textSecondary)
                     
                     Text("AI 기반 개인화 차량 추천 서비스")
                         .font(.caption2)
-                        .foregroundColor(Color(UIConstants.Colors.textSecondary))
+                        .foregroundColor(.textSecondary)
                 }
             }
             .padding()
@@ -101,47 +101,122 @@ struct LoginFormView: View {
     @State private var rememberMe = false
     @State private var isPasswordVisible = false
     @State private var cancellables = Set<AnyCancellable>()
+    @FocusState private var focusedField: Field?
+    
+    enum Field: Hashable {
+        case username
+        case password
+    }
     
     var body: some View {
-        VStack(spacing: UIConstants.Spacing.lg) {
+        VStack(spacing: 24) {
             // 로그인 타이틀
             Text("로그인")
                 .font(.title2)
                 .fontWeight(.semibold)
-                .foregroundColor(Color(UIConstants.Colors.textPrimary))
+                .foregroundColor(.textPrimary)
             
-            VStack(spacing: UIConstants.Spacing.md) {
+            VStack(spacing: 16) {
                 // 아이디 입력
-                CustomTextField(
-                    text: $username,
-                    placeholder: "아이디",
-                    systemImage: "person.fill"
-                )
-                .textContentType(.username)
-                .autocapitalization(.none)
-                .disableAutocorrection(true)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("아이디")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.textPrimary)
+                    
+                    HStack {
+                        Image(systemName: "person.fill")
+                            .foregroundColor(.secondaryGray)
+                            .frame(width: 20)
+                        
+                        TextField("아이디를 입력하세요", text: $username)
+                            .textFieldStyle(PlainTextFieldStyle())
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .textContentType(.username)
+                            .focused($focusedField, equals: .username)
+                            .submitLabel(.next)
+                            .onSubmit {
+                                focusedField = .password
+                            }
+                    }
+                    .padding()
+                    .background(Color.backgroundColor)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(
+                                focusedField == .username ?
+                                Color.primaryBlue :
+                                Color.secondaryGray.opacity(0.3),
+                                lineWidth: focusedField == .username ? 2 : 1
+                            )
+                    )
+                }
                 
                 // 비밀번호 입력
-                CustomSecureField(
-                    text: $password,
-                    placeholder: "비밀번호",
-                    systemImage: "lock.fill",
-                    isVisible: $isPasswordVisible
-                )
-                .textContentType(.password)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("비밀번호")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.textPrimary)
+                    
+                    HStack {
+                        Image(systemName: "lock.fill")
+                            .foregroundColor(.secondaryGray)
+                            .frame(width: 20)
+                        
+                        Group {
+                            if isPasswordVisible {
+                                TextField("비밀번호를 입력하세요", text: $password)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                    .autocapitalization(.none)
+                                    .disableAutocorrection(true)
+                            } else {
+                                SecureField("비밀번호를 입력하세요", text: $password)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                            }
+                        }
+                        .textContentType(.password)
+                        .focused($focusedField, equals: .password)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            performLogin()
+                        }
+                        
+                        Button(action: {
+                            isPasswordVisible.toggle()
+                        }) {
+                            Image(systemName: isPasswordVisible ? "eye.slash.fill" : "eye.fill")
+                                .foregroundColor(.secondaryGray)
+                        }
+                    }
+                    .padding()
+                    .background(Color.backgroundColor)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(
+                                focusedField == .password ?
+                                Color.primaryBlue :
+                                Color.secondaryGray.opacity(0.3),
+                                lineWidth: focusedField == .password ? 2 : 1
+                            )
+                    )
+                }
                 
                 // 로그인 유지 옵션
                 HStack {
                     Button(action: {
                         rememberMe.toggle()
                     }) {
-                        HStack(spacing: UIConstants.Spacing.xs) {
+                        HStack(spacing: 4) {
                             Image(systemName: rememberMe ? "checkmark.square.fill" : "square")
-                                .foregroundColor(rememberMe ? Color(UIConstants.Colors.primaryBlue) : Color(UIConstants.Colors.secondaryGray))
+                                .foregroundColor(rememberMe ? Color.primaryBlue : Color.secondaryGray)
                             
                             Text("로그인 상태 유지")
                                 .font(.caption)
-                                .foregroundColor(Color(UIConstants.Colors.textSecondary))
+                                .foregroundColor(.textSecondary)
                         }
                     }
                     
@@ -153,21 +228,31 @@ struct LoginFormView: View {
             Button("로그인") {
                 performLogin()
             }
-            .buttonStyle(PrimaryButtonStyle(theme: ThemeManager.shared))
+            .font(.headline)
+            .fontWeight(.semibold)
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(
+                (username.isEmpty || password.isEmpty || authManager.isLoading) ?
+                Color.secondaryGray :
+                Color.primaryBlue
+            )
+            .cornerRadius(12)
             .disabled(username.isEmpty || password.isEmpty || authManager.isLoading)
-            .opacity((username.isEmpty || password.isEmpty || authManager.isLoading) ? 0.6 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: username.isEmpty || password.isEmpty)
             
             // 로딩 인디케이터
             if authManager.isLoading {
                 ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: Color(UIConstants.Colors.primaryBlue)))
+                    .progressViewStyle(CircularProgressViewStyle(tint: Color.primaryBlue))
             }
             
             // 회원가입 링크
             HStack {
                 Text("계정이 없으신가요?")
                     .font(.caption)
-                    .foregroundColor(Color(UIConstants.Colors.textSecondary))
+                    .foregroundColor(.textSecondary)
                 
                 Button("회원가입") {
                     withAnimation(.easeInOut) {
@@ -176,23 +261,36 @@ struct LoginFormView: View {
                 }
                 .font(.caption)
                 .fontWeight(.medium)
-                .foregroundColor(Color(UIConstants.Colors.primaryBlue))
+                .foregroundColor(.primaryBlue)
             }
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: UIConstants.CornerRadius.large)
-                .fill(Color(UIConstants.Colors.cardBackground))
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.cardBackground)
                 .shadow(
-                    color: Color.black.opacity(UIConstants.Shadow.opacity),
-                    radius: UIConstants.Shadow.radius,
-                    x: UIConstants.Shadow.offset.width,
-                    y: UIConstants.Shadow.offset.height
+                    color: Color.black.opacity(0.1),
+                    radius: 8,
+                    x: 0,
+                    y: 2
                 )
         )
+        .onAppear {
+            // 화면이 나타날 때 첫 번째 필드에 포커스
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                focusedField = .username
+            }
+        }
+        .onTapGesture {
+            // 빈 공간 탭 시 키보드 숨기기
+            focusedField = nil
+        }
     }
     
     private func performLogin() {
+        // 키보드 숨기기
+        focusedField = nil
+        
         // 입력 검증
         if let error = validateLoginInput() {
             alertMessage = error
@@ -233,7 +331,7 @@ struct LoginFormView: View {
     }
 }
 
-// MARK: - 회원가입 폼 뷰
+// MARK: - 회원가입 폼 뷰 (기존 코드와 동일하되 @FocusState 추가)
 struct RegisterFormView: View {
     @StateObject private var authManager = AuthManager.shared
     @Binding var isShowingRegister: Bool
@@ -248,6 +346,13 @@ struct RegisterFormView: View {
     @State private var isCheckingUsername = false
     @State private var usernameValidationMessage = ""
     @State private var cancellables = Set<AnyCancellable>()
+    @FocusState private var focusedField: Field?
+    
+    enum Field: Hashable {
+        case username
+        case password
+        case confirmPassword
+    }
     
     var body: some View {
         VStack(spacing: UIConstants.Spacing.lg) {
@@ -260,18 +365,55 @@ struct RegisterFormView: View {
             VStack(spacing: UIConstants.Spacing.md) {
                 // 아이디 입력
                 VStack(alignment: .leading, spacing: UIConstants.Spacing.xs) {
-                    CustomTextField(
-                        text: $username,
-                        placeholder: "아이디 (3자 이상)",
-                        systemImage: "person.fill"
-                    )
-                    .textContentType(.username)
-                    .autocapitalization(.none)
-                    .disableAutocorrection(true)
-                    .onChange(of: username) { _ in
-                        validateUsername()
-                    }
+                    Text("아이디")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(Color(UIConstants.Colors.textPrimary))
                     
+                    HStack {
+                        Image(systemName: "person.fill")
+                            .foregroundColor(Color(UIConstants.Colors.secondaryGray))
+                            .frame(width: 20)
+                        
+                        TextField("아이디를 입력하세요 (3자 이상)", text: $username)
+                            .textFieldStyle(PlainTextFieldStyle())
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .textContentType(.username)
+                            .focused($focusedField, equals: .username)
+                            .submitLabel(.next)
+                            .onSubmit {
+                                focusedField = .password
+                            }
+                            .onChange(of: username) { _ in
+                                validateUsername()
+                            }
+                        
+                        // 상태 표시
+                        if isCheckingUsername {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle())
+                                .scaleEffect(0.8)
+                        } else if !usernameValidationMessage.isEmpty {
+                            Image(systemName: usernameValidationMessage.contains("사용 가능") ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                .foregroundColor(usernameValidationMessage.contains("사용 가능") ? Color(UIConstants.Colors.successColor) : Color(UIConstants.Colors.accentColor))
+                                .font(.title3)
+                        }
+                    }
+                    .padding()
+                    .background(Color(UIConstants.Colors.backgroundColor))
+                    .cornerRadius(UIConstants.CornerRadius.medium)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: UIConstants.CornerRadius.medium)
+                            .stroke(
+                                focusedField == .username ?
+                                Color(UIConstants.Colors.primaryBlue) :
+                                Color(UIConstants.Colors.secondaryGray).opacity(0.3),
+                                lineWidth: focusedField == .username ? 2 : 1
+                            )
+                    )
+                    
+                    // 검증 메시지
                     if !usernameValidationMessage.isEmpty {
                         HStack {
                             Image(systemName: usernameValidationMessage.contains("사용 가능") ? "checkmark.circle.fill" : "xmark.circle.fill")
@@ -287,37 +429,150 @@ struct RegisterFormView: View {
                 
                 // 비밀번호 입력
                 VStack(alignment: .leading, spacing: UIConstants.Spacing.xs) {
-                    CustomSecureField(
-                        text: $password,
-                        placeholder: "비밀번호 (6자 이상)",
-                        systemImage: "lock.fill",
-                        isVisible: $isPasswordVisible
+                    Text("비밀번호")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(Color(UIConstants.Colors.textPrimary))
+                    
+                    HStack {
+                        Image(systemName: "lock.fill")
+                            .foregroundColor(Color(UIConstants.Colors.secondaryGray))
+                            .frame(width: 20)
+                        
+                        Group {
+                            if isPasswordVisible {
+                                TextField("비밀번호 (6자 이상)", text: $password)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                    .autocapitalization(.none)
+                                    .disableAutocorrection(true)
+                            } else {
+                                SecureField("비밀번호 (6자 이상)", text: $password)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                            }
+                        }
+                        .textContentType(.newPassword)
+                        .focused($focusedField, equals: .password)
+                        .submitLabel(.next)
+                        .onSubmit {
+                            focusedField = .confirmPassword
+                        }
+                        
+                        Button(action: {
+                            isPasswordVisible.toggle()
+                        }) {
+                            Image(systemName: isPasswordVisible ? "eye.slash.fill" : "eye.fill")
+                                .foregroundColor(Color(UIConstants.Colors.secondaryGray))
+                        }
+                    }
+                    .padding()
+                    .background(Color(UIConstants.Colors.backgroundColor))
+                    .cornerRadius(UIConstants.CornerRadius.medium)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: UIConstants.CornerRadius.medium)
+                            .stroke(
+                                focusedField == .password ?
+                                Color(UIConstants.Colors.primaryBlue) :
+                                Color(UIConstants.Colors.secondaryGray).opacity(0.3),
+                                lineWidth: focusedField == .password ? 2 : 1
+                            )
                     )
-                    .textContentType(.newPassword)
                     
                     if !password.isEmpty {
-                        PasswordStrengthView(password: password)
+                        // 기존 PasswordStrengthView 사용 (중복 정의 제거)
+                        VStack(alignment: .leading, spacing: UIConstants.Spacing.xs) {
+                            HStack {
+                                Text("비밀번호 강도:")
+                                    .font(.caption)
+                                    .foregroundColor(Color(UIConstants.Colors.textSecondary))
+                                
+                                let strength = calculatePasswordStrength(password)
+                                Text(strength.displayName)
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(strength.color)
+                            }
+                            
+                            // 강도 바
+                            GeometryReader { geometry in
+                                ZStack(alignment: .leading) {
+                                    Rectangle()
+                                        .fill(Color(UIConstants.Colors.backgroundColor))
+                                        .frame(height: 4)
+                                        .cornerRadius(2)
+                                    
+                                    let strength = calculatePasswordStrength(password)
+                                    Rectangle()
+                                        .fill(strength.color)
+                                        .frame(width: geometry.size.width * strength.ratio, height: 4)
+                                        .cornerRadius(2)
+                                        .animation(.easeInOut(duration: 0.3), value: strength.ratio)
+                                }
+                            }
+                            .frame(height: 4)
+                        }
                     }
                 }
                 
                 // 비밀번호 확인
-                CustomSecureField(
-                    text: $confirmPassword,
-                    placeholder: "비밀번호 확인",
-                    systemImage: "lock.fill",
-                    isVisible: $isConfirmPasswordVisible
-                )
-                .textContentType(.newPassword)
-                
-                if !confirmPassword.isEmpty && password != confirmPassword {
+                VStack(alignment: .leading, spacing: UIConstants.Spacing.xs) {
+                    Text("비밀번호 확인")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(Color(UIConstants.Colors.textPrimary))
+                    
                     HStack {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(Color(UIConstants.Colors.accentColor))
-                            .font(.caption)
+                        Image(systemName: "lock.fill")
+                            .foregroundColor(Color(UIConstants.Colors.secondaryGray))
+                            .frame(width: 20)
                         
-                        Text("비밀번호가 일치하지 않습니다")
-                            .font(.caption)
-                            .foregroundColor(Color(UIConstants.Colors.accentColor))
+                        Group {
+                            if isConfirmPasswordVisible {
+                                TextField("비밀번호 확인", text: $confirmPassword)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                    .autocapitalization(.none)
+                                    .disableAutocorrection(true)
+                            } else {
+                                SecureField("비밀번호 확인", text: $confirmPassword)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                            }
+                        }
+                        .textContentType(.newPassword)
+                        .focused($focusedField, equals: .confirmPassword)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            performRegister()
+                        }
+                        
+                        Button(action: {
+                            isConfirmPasswordVisible.toggle()
+                        }) {
+                            Image(systemName: isConfirmPasswordVisible ? "eye.slash.fill" : "eye.fill")
+                                .foregroundColor(Color(UIConstants.Colors.secondaryGray))
+                        }
+                    }
+                    .padding()
+                    .background(Color(UIConstants.Colors.backgroundColor))
+                    .cornerRadius(UIConstants.CornerRadius.medium)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: UIConstants.CornerRadius.medium)
+                            .stroke(
+                                focusedField == .confirmPassword ?
+                                Color(UIConstants.Colors.primaryBlue) :
+                                Color(UIConstants.Colors.secondaryGray).opacity(0.3),
+                                lineWidth: focusedField == .confirmPassword ? 2 : 1
+                            )
+                    )
+                    
+                    if !confirmPassword.isEmpty && password != confirmPassword {
+                        HStack {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(Color(UIConstants.Colors.accentColor))
+                                .font(.caption)
+                            
+                            Text("비밀번호가 일치하지 않습니다")
+                                .font(.caption)
+                                .foregroundColor(Color(UIConstants.Colors.accentColor))
+                        }
                     }
                 }
             }
@@ -326,9 +581,19 @@ struct RegisterFormView: View {
             Button("회원가입") {
                 performRegister()
             }
-            .buttonStyle(PrimaryButtonStyle(theme: ThemeManager.shared))
+            .font(.headline)
+            .fontWeight(.semibold)
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(
+                (!isFormValid || authManager.isLoading) ?
+                Color(UIConstants.Colors.secondaryGray) :
+                Color(UIConstants.Colors.primaryBlue)
+            )
+            .cornerRadius(UIConstants.CornerRadius.medium)
             .disabled(!isFormValid || authManager.isLoading)
-            .opacity((!isFormValid || authManager.isLoading) ? 0.6 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: isFormValid)
             
             // 로딩 인디케이터
             if authManager.isLoading {
@@ -363,6 +628,16 @@ struct RegisterFormView: View {
                     y: UIConstants.Shadow.offset.height
                 )
         )
+        .onAppear {
+            // 화면이 나타날 때 첫 번째 필드에 포커스
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                focusedField = .username
+            }
+        }
+        .onTapGesture {
+            // 빈 공간 탭 시 키보드 숨기기
+            focusedField = nil
+        }
     }
     
     private var isFormValid: Bool {
@@ -414,6 +689,9 @@ struct RegisterFormView: View {
     }
     
     private func performRegister() {
+        // 키보드 숨기기
+        focusedField = nil
+        
         // 입력 검증
         if let error = validateRegisterInput() {
             alertMessage = error
@@ -468,219 +746,58 @@ struct RegisterFormView: View {
     }
 }
 
-// MARK: - 커스텀 텍스트 필드
-struct CustomTextField: View {
-    @Binding var text: String
-    let placeholder: String
-    let systemImage: String
-    
-    var body: some View {
-        HStack(spacing: UIConstants.Spacing.sm) {
-            Image(systemName: systemImage)
-                .foregroundColor(Color(UIConstants.Colors.secondaryGray))
-                .frame(width: 20)
-            
-            TextField(placeholder, text: $text)
-                .textFieldStyle(PlainTextFieldStyle())
+// MARK: - 비밀번호 강도 계산 헬퍼 (기존 것과 충돌 방지)
+extension RegisterFormView {
+    private func calculatePasswordStrength(_ password: String) -> PasswordStrengthLevel {
+        var score = 0
+        
+        // 길이 점수
+        if password.count >= 6 { score += 1 }
+        if password.count >= 8 { score += 1 }
+        if password.count >= 12 { score += 1 }
+        
+        // 문자 종류 점수
+        if password.range(of: "[a-z]", options: .regularExpression) != nil { score += 1 }
+        if password.range(of: "[A-Z]", options: .regularExpression) != nil { score += 1 }
+        if password.range(of: "[0-9]", options: .regularExpression) != nil { score += 1 }
+        if password.range(of: "[^a-zA-Z0-9]", options: .regularExpression) != nil { score += 1 }
+        
+        switch score {
+        case 0...2: return .weak
+        case 3...4: return .medium
+        case 5...6: return .strong
+        default: return .veryStrong
         }
-        .padding()
-        .background(Color(UIConstants.Colors.backgroundColor))
-        .cornerRadius(UIConstants.CornerRadius.medium)
-        .overlay(
-            RoundedRectangle(cornerRadius: UIConstants.CornerRadius.medium)
-                .stroke(Color(UIConstants.Colors.secondaryGray).opacity(0.3), lineWidth: 1)
-        )
     }
 }
 
-// MARK: - 커스텀 보안 필드
-struct CustomSecureField: View {
-    @Binding var text: String
-    let placeholder: String
-    let systemImage: String
-    @Binding var isVisible: Bool
+// MARK: - 비밀번호 강도 레벨 (기존 것과 충돌 방지)
+enum PasswordStrengthLevel: Int {
+    case weak = 1
+    case medium = 2
+    case strong = 3
+    case veryStrong = 4
     
-    var body: some View {
-        HStack(spacing: UIConstants.Spacing.sm) {
-            Image(systemName: systemImage)
-                .foregroundColor(Color(UIConstants.Colors.secondaryGray))
-                .frame(width: 20)
-            
-            if isVisible {
-                TextField(placeholder, text: $text)
-                    .textFieldStyle(PlainTextFieldStyle())
-            } else {
-                SecureField(placeholder, text: $text)
-                    .textFieldStyle(PlainTextFieldStyle())
-            }
-            
-            Button(action: {
-                isVisible.toggle()
-            }) {
-                Image(systemName: isVisible ? "eye.slash.fill" : "eye.fill")
-                    .foregroundColor(Color(UIConstants.Colors.secondaryGray))
-            }
+    var displayName: String {
+        switch self {
+        case .weak: return "약함"
+        case .medium: return "보통"
+        case .strong: return "강함"
+        case .veryStrong: return "매우 강함"
         }
-        .padding()
-        .background(Color(UIConstants.Colors.backgroundColor))
-        .cornerRadius(UIConstants.CornerRadius.medium)
-        .overlay(
-            RoundedRectangle(cornerRadius: UIConstants.CornerRadius.medium)
-                .stroke(Color(UIConstants.Colors.secondaryGray).opacity(0.3), lineWidth: 1)
-        )
     }
-}
-
-// MARK: - 비밀번호 강도 표시
-//struct PasswordStrengthView: View {
-//    let password: String
-//    
-//    private var strength: PasswordStrength {
-//        return calculatePasswordStrength(password)
-//    }
-//    
-//    var body: some View {
-//        VStack(alignment: .leading, spacing: UIConstants.Spacing.xs) {
-//            HStack {
-//                Text("비밀번호 강도:")
-//                    .font(.caption)
-//                    .foregroundColor(Color(UIConstants.Colors.textSecondary))
-//                
-//                Text(strength.description)
-//                    .font(.caption)
-//                    .fontWeight(.medium)
-//                    .foregroundColor(strength.color)
-//            }
-//            
-//            // 강도 바
-//            HStack(spacing: 2) {
-//                ForEach(0..<4, id: \.self) { index in
-//                    Rectangle()
-//                        .fill(index < strength.level ? strength.color : Color(UIConstants.Colors.secondaryGray).opacity(0.3))
-//                        .frame(height: 3)
-//                        .cornerRadius(1.5)
-//                }
-//            }
-//        }
-//    }
-//    
-//    private func calculatePasswordStrength(_ password: String) -> PasswordStrength {
-//        var score = 0
-//        
-//        // 길이 체크
-//        if password.count >= 6 { score += 1 }
-//        if password.count >= 8 { score += 1 }
-//        
-//        // 문자 종류 체크
-//        if password.rangeOfCharacter(from: .lowercaseLetters) != nil { score += 1 }
-//        if password.rangeOfCharacter(from: .uppercaseLetters) != nil { score += 1 }
-//        if password.rangeOfCharacter(from: .decimalDigits) != nil { score += 1 }
-//        if password.rangeOfCharacter(from: CharacterSet(charactersIn: "!@#$%^&*()_+-=[]{}|;:,.<>?")) != nil { score += 1 }
-//        
-//        // 점수에 따른 강도 반환
-//        switch score {
-//        case 0...2: return .weak
-//        case 3...4: return .medium
-//        case 5...6: return .strong
-//        default: return .veryStrong
-//        }
-//    }
-//}
-
-// MARK: - 비밀번호 강도 열거형
-//enum PasswordStrength {
-//    case weak
-//    case medium
-//    case strong
-//    case veryStrong
-//    
-//    var description: String {
-//        switch self {
-//        case .weak: return "약함"
-//        case .medium: return "보통"
-//        case .strong: return "강함"
-//        case .veryStrong: return "매우 강함"
-//        }
-//    }
-//    
-//    var color: Color {
-//        switch self {
-//        case .weak: return Color(UIConstants.Colors.accentColor)
-//        case .medium: return Color(UIConstants.Colors.warningColor)
-//        case .strong: return Color(UIConstants.Colors.successColor)
-//        case .veryStrong: return Color(UIConstants.Colors.primaryBlue)
-//        }
-//    }
-//    
-//    var level: Int {
-//        switch self {
-//        case .weak: return 1
-//        case .medium: return 2
-//        case .strong: return 3
-//        case .veryStrong: return 4
-//        }
-//    }
-//}
-
-// MARK: - 소셜 로그인 뷰 (향후 확장용)
-struct SocialLoginView: View {
-    var body: some View {
-        VStack(spacing: UIConstants.Spacing.md) {
-            HStack {
-                Rectangle()
-                    .fill(Color(UIConstants.Colors.secondaryGray).opacity(0.3))
-                    .frame(height: 1)
-                
-                Text("또는")
-                    .font(.caption)
-                    .foregroundColor(Color(UIConstants.Colors.textSecondary))
-                    .padding(.horizontal, UIConstants.Spacing.sm)
-                
-                Rectangle()
-                    .fill(Color(UIConstants.Colors.secondaryGray).opacity(0.3))
-                    .frame(height: 1)
-            }
-            
-            // Apple 로그인 (향후 구현)
-            Button(action: {
-                // Apple 로그인 구현
-            }) {
-                HStack {
-                    Image(systemName: "applelogo")
-                        .font(.title3)
-                    
-                    Text("Apple로 계속하기")
-                        .fontWeight(.medium)
-                }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.black)
-                .cornerRadius(UIConstants.CornerRadius.medium)
-            }
-            
-            // Google 로그인 (향후 구현)
-            Button(action: {
-                // Google 로그인 구현
-            }) {
-                HStack {
-                    Image(systemName: "globe")
-                        .font(.title3)
-                    
-                    Text("Google로 계속하기")
-                        .fontWeight(.medium)
-                }
-                .foregroundColor(Color(UIConstants.Colors.textPrimary))
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.white)
-                .cornerRadius(UIConstants.CornerRadius.medium)
-                .overlay(
-                    RoundedRectangle(cornerRadius: UIConstants.CornerRadius.medium)
-                        .stroke(Color(UIConstants.Colors.secondaryGray).opacity(0.3), lineWidth: 1)
-                )
-            }
+    
+    var color: Color {
+        switch self {
+        case .weak: return Color(UIConstants.Colors.accentColor)
+        case .medium: return Color(UIConstants.Colors.warningColor)
+        case .strong: return Color(UIConstants.Colors.successColor)
+        case .veryStrong: return Color(UIConstants.Colors.primaryBlue)
         }
+    }
+    
+    var ratio: Double {
+        return Double(self.rawValue) / 4.0
     }
 }
 
@@ -695,33 +812,6 @@ struct LoginView_Previews: PreviewProvider {
             LoginView()
                 .preferredColorScheme(.dark)
                 .previewDisplayName("Login View - Dark")
-            
-            // 회원가입 상태 프리뷰
-            LoginView()
-                .onAppear {
-                    // 회원가입 상태로 설정하는 코드는 실제 프리뷰에서는 동작하지 않음
-                }
-                .previewDisplayName("Register View")
-            
-            // 개별 컴포넌트 프리뷰
-            VStack {
-                CustomTextField(
-                    text: .constant("test@example.com"),
-                    placeholder: "이메일",
-                    systemImage: "envelope.fill"
-                )
-                
-                CustomSecureField(
-                    text: .constant("password123"),
-                    placeholder: "비밀번호",
-                    systemImage: "lock.fill",
-                    isVisible: .constant(false)
-                )
-                
-                PasswordStrengthView(password: "Password123!")
-            }
-            .padding()
-            .previewDisplayName("Form Components")
         }
     }
 }
